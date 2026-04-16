@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Snake Game Ultimate</title>
+
   <style>
     body {
       display: flex;
@@ -33,10 +34,17 @@
       font-size: 14px;
       cursor: pointer;
     }
+
+    #startMsg {
+      margin-bottom: 10px;
+      color: #aaa;
+    }
   </style>
 </head>
 
 <body>
+
+<div id="startMsg">Press Arrow Keys to Start</div>
 
 <div id="topbar">
   <div id="score">Score: 0</div>
@@ -69,7 +77,7 @@ let foodTimer = null;
 let speed = 120;
 let paused = false;
 
-const FOOD_LIFETIME = 6000; // 6 seconds
+const FOOD_LIFETIME = 6000;
 
 // ---------------- INIT ----------------
 function init() {
@@ -78,7 +86,9 @@ function init() {
   food = randomFood();
   score = 0;
   paused = false;
+
   document.getElementById("score").innerText = "Score: 0";
+  document.getElementById("startMsg").style.display = "block";
 }
 
 // ---------------- START GAME ----------------
@@ -88,13 +98,12 @@ function startGame() {
 
   interval = setInterval(gameLoop, speed);
 
-  // refresh food every 3 seconds
   foodTimer = setInterval(() => {
     food = randomFood();
   }, FOOD_LIFETIME);
 }
 
-// ---------------- LOOP ----------------
+// ---------------- GAME LOOP ----------------
 function gameLoop() {
   if (paused) return;
   update();
@@ -103,6 +112,10 @@ function gameLoop() {
 
 // ---------------- UPDATE ----------------
 function update() {
+
+  // prevent instant game over before movement starts
+  if (direction.x === 0 && direction.y === 0) return;
+
   const head = {
     x: snake[0].x + direction.x,
     y: snake[0].y + direction.y
@@ -132,15 +145,17 @@ function update() {
 
     if (food.type === "red") {
       score++;
+    }
 
-    } else if (food.type === "blue") {
-      snake.pop(); // shrink
+    if (food.type === "blue") {
+      snake.pop();
       if (snake.length <= 1) {
         gameOver();
         return;
       }
+    }
 
-    } else if (food.type === "brown") {
+    if (food.type === "brown") {
       gameOver();
       return;
     }
@@ -169,7 +184,7 @@ function draw() {
     );
   }
 
-  // food color
+  // food
   if (food.type === "red") ctx.fillStyle = "red";
   else if (food.type === "blue") ctx.fillStyle = "blue";
   else if (food.type === "brown") ctx.fillStyle = "brown";
@@ -182,7 +197,7 @@ function draw() {
   );
 }
 
-// ---------------- FOOD SPAWN (weighted + safe) ----------------
+// ---------------- FOOD SPAWN ----------------
 function randomFood() {
   const r = Math.random();
 
@@ -214,6 +229,8 @@ function randomFood() {
 document.addEventListener("keydown", changeDirection);
 
 function changeDirection(e) {
+  document.getElementById("startMsg").style.display = "none";
+
   switch (e.key) {
     case "ArrowUp":
       if (direction.y !== 1) direction = { x: 0, y: -1 };
