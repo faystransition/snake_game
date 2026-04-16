@@ -9,7 +9,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start
       height: 100vh;
       background: #111;
       margin: 0;
@@ -42,6 +42,7 @@
     }
     
     #title {
+      margin-top: 5px;
       margin-bottom: 10px;
       font-size: 28px;
       color: #7CFC00;
@@ -64,6 +65,30 @@
       color: white;
       border: 1px solid #555;
     }
+
+  /* MOBILE UI IMPROVEMENTS */
+  @media (max-width: 600px) {
+    canvas {
+      width: 90vw;
+      height: 90vw;
+    }
+    
+    #topbar {
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    button, select {
+      font-size: 16px;
+      padding: 8px 12px;
+    }
+
+    #title {
+      font-size: 32px;
+    }
+  }
+    
   </style>
 </head>
 
