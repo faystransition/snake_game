@@ -15,6 +15,7 @@
       margin: 0;
       font-family: Arial, sans-serif;
       color: white;
+      overflow: hidden; /* prevent scrolling on mobile */
     }
 
     canvas {
@@ -46,6 +47,23 @@
       color: #7CFC00;
       letter-spacing: 2px;
     }
+
+    /* MOBILE CONTROLS */
+    .controls {
+      position: fixed;
+      bottom: 20px;
+      text-align: center;
+    }
+
+    .controls button {
+      font-size: 26px;
+      padding: 15px;
+      margin: 6px;
+      border-radius: 10px;
+      background: #222;
+      color: white;
+      border: 1px solid #555;
+    }
   </style>
 </head>
 
@@ -72,6 +90,16 @@
 </div>
 
 <canvas id="game" width="400" height="400"></canvas>
+
+<!-- BUTTON CONTROLS -->
+<div class="controls">
+  <button onclick="setDirection('up')">⬆️</button>
+  <div>
+    <button onclick="setDirection('left')">⬅️</button>
+    <button onclick="setDirection('down')">⬇️</button>
+    <button onclick="setDirection('right')">➡️</button>
+  </div>
+</div>
 
 <script>
 const canvas = document.getElementById("game");
@@ -122,7 +150,6 @@ function gameLoop() {
 // ---------------- UPDATE ----------------
 function update() {
 
-  // prevent instant game over before movement starts
   if (direction.x === 0 && direction.y === 0) return;
 
   const head = {
@@ -130,7 +157,6 @@ function update() {
     y: snake[0].y + direction.y
   };
 
-  // wall collision
   if (
     head.x < 0 || head.x >= tileCount ||
     head.y < 0 || head.y >= tileCount
@@ -139,7 +165,6 @@ function update() {
     return;
   }
 
-  // self collision
   for (let part of snake) {
     if (part.x === head.x && part.y === head.y) {
       gameOver();
@@ -149,25 +174,14 @@ function update() {
 
   snake.unshift(head);
 
-  // food interaction
   if (head.x === food.x && head.y === food.y) {
 
-    if (food.type === "red") {
-      score++;
-    }
-
+    if (food.type === "red") score++;
     if (food.type === "blue") {
       snake.pop();
-      if (snake.length <= 1) {
-        gameOver();
-        return;
-      }
+      if (snake.length <= 1) return gameOver();
     }
-
-    if (food.type === "brown") {
-      gameOver();
-      return;
-    }
+    if (food.type === "brown") return gameOver();
 
     document.getElementById("score").innerText = "Score: " + score;
     food = randomFood();
@@ -182,7 +196,6 @@ function draw() {
   ctx.fillStyle = "black";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // snake
   ctx.fillStyle = "lime";
   for (let part of snake) {
     ctx.fillRect(
@@ -193,10 +206,9 @@ function draw() {
     );
   }
 
-  // food
   if (food.type === "red") ctx.fillStyle = "red";
   else if (food.type === "blue") ctx.fillStyle = "blue";
-  else if (food.type === "brown") ctx.fillStyle = "brown";
+  else ctx.fillStyle = "brown";
 
   ctx.fillRect(
     food.x * gridSize,
@@ -206,55 +218,70 @@ function draw() {
   );
 }
 
-// ---------------- FOOD SPAWN ----------------
+// ---------------- FOOD ----------------
 function randomFood() {
   const r = Math.random();
-
-  let type;
-  if (r < 0.7) type = "red";
-  else if (r < 0.9) type = "brown";
-  else type = "blue";
+  let type = r < 0.7 ? "red" : r < 0.9 ? "brown" : "blue";
 
   let newFood;
-
   while (true) {
     newFood = {
       x: Math.floor(Math.random() * tileCount),
       y: Math.floor(Math.random() * tileCount),
-      type: type
+      type
     };
 
-    const onSnake = snake.some(
-      part => part.x === newFood.x && part.y === newFood.y
-    );
-
-    if (!onSnake) break;
+    if (!snake.some(p => p.x === newFood.x && p.y === newFood.y)) break;
   }
 
   return newFood;
 }
 
 // ---------------- CONTROLS ----------------
-document.addEventListener("keydown", changeDirection);
+document.addEventListener("keydown", (e) => {
+  handleDirection(e.key);
+});
 
-function changeDirection(e) {
+function setDirection(dir) {
+  handleDirection(dir);
+}
+
+function handleDirection(key) {
   document.getElementById("startMsg").style.display = "none";
 
-  switch (e.key) {
-    case "ArrowUp":
-      if (direction.y !== 1) direction = { x: 0, y: -1 };
-      break;
-    case "ArrowDown":
-      if (direction.y !== -1) direction = { x: 0, y: 1 };
-      break;
-    case "ArrowLeft":
-      if (direction.x !== 1) direction = { x: -1, y: 0 };
-      break;
-    case "ArrowRight":
-      if (direction.x !== -1) direction = { x: 1, y: 0 };
-      break;
-  }
+  if ((key === "ArrowUp" || key === "up") && direction.y !== 1)
+    direction = { x: 0, y: -1 };
+
+  if ((key === "ArrowDown" || key === "down") && direction.y !== -1)
+    direction = { x: 0, y: 1 };
+
+  if ((key === "ArrowLeft" || key === "left") && direction.x !== 1)
+    direction = { x: -1, y: 0 };
+
+  if ((key === "ArrowRight" || key === "right") && direction.x !== -1)
+    direction = { x: 1, y: 0 };
 }
+
+// SWIPE SUPPORT
+let startX = 0, startY = 0;
+
+document.addEventListener("touchstart", e => {
+  startX = e.touches[0].clientX;
+  startY = e.touches[0].clientY;
+});
+
+document.addEventListener("touchend", e => {
+  let dx = e.changedTouches[0].clientX - startX;
+  let dy = e.changedTouches[0].clientY - startY;
+
+  if (Math.abs(dx) > Math.abs(dy)) {
+    if (dx > 0) handleDirection("right");
+    else handleDirection("left");
+  } else {
+    if (dy > 0) handleDirection("down");
+    else handleDirection("up");
+  }
+});
 
 // ---------------- UI ----------------
 function togglePause() {
