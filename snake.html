@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Snake Game Ultimate</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: #111;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      color: white;
+    }
+
+    canvas {
+      background: #000;
+      border: 2px solid #555;
+    }
+
+    #topbar {
+      margin-bottom: 10px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+
+    button, select {
+      padding: 6px 10px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+<div id="topbar">
+  <div id="score">Score: 0</div>
+
+  <button onclick="togglePause()">Pause</button>
+  <button onclick="restartGame()">Restart</button>
+
+  <label>
+    Speed:
+    <select onchange="changeSpeed(this.value)">
+      <option value="200">Slow</option>
+      <option value="120" selected>Normal</option>
+      <option value="70">Fast</option>
+    </select>
+  </label>
+</div>
+
+<canvas id="game" width="400" height="400"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const gridSize = 20;
+const tileCount = canvas.width / gridSize;
+
+let snake, direction, food, score;
+let interval = null;
+let foodTimer = null;
+let speed = 120;
+let paused = false;
+
+const FOOD_LIFETIME = 6000; // 6 seconds
+
+// ---------------- INIT ----------------
+function init() {
+  snake = [{ x: 10, y: 10 }];
+  direction = { x: 0, y: 0 };
+  food = randomFood();
+  score = 0;
+  paused = false;
+  document.getElementById("score").innerText = "Score: 0";
+}
+
+// ---------------- START GAME ----------------
+function startGame() {
+  if (interval) clearInterval(interval);
+  if (foodTimer) clearInterval(foodTimer);
+
+  interval = setInterval(gameLoop, speed);
+
+  // refresh food every 3 seconds
+  foodTimer = setInterval(() => {
+    food = randomFood();
+  }, FOOD_LIFETIME);
+}
+
+// ---------------- LOOP ----------------
+function gameLoop() {
+  if (paused) return;
+  update();
+  draw();
+}
+
+// ---------------- UPDATE ----------------
+function update() {
+  const head = {
+    x: snake[0].x + direction.x,
+    y: snake[0].y + direction.y
+  };
+
+  // wall collision
+  if (
+    head.x < 0 || head.x >= tileCount ||
+    head.y < 0 || head.y >= tileCount
+  ) {
+    gameOver();
+    return;
+  }
+
+  // self collision
+  for (let part of snake) {
+    if (part.x === head.x && part.y === head.y) {
+      gameOver();
+      return;
+    }
+  }
+
+  snake.unshift(head);
+
+  // food interaction
+  if (head.x === food.x && head.y === food.y) {
+
+    if (food.type === "red") {
+      score++;
+
+    } else if (food.type === "blue") {
+      snake.pop(); // shrink
+      if (snake.length <= 1) {
+        gameOver();
+        return;
+      }
+
+    } else if (food.type === "brown") {
+      gameOver();
+      return;
+    }
+
+    document.getElementById("score").innerText = "Score: " + score;
+    food = randomFood();
+
+  } else {
+    snake.pop();
+  }
+}
+
+// ---------------- DRAW ----------------
+function draw() {
+  ctx.fillStyle = "black";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // snake
+  ctx.fillStyle = "lime";
+  for (let part of snake) {
+    ctx.fillRect(
+      part.x * gridSize,
+      part.y * gridSize,
+      gridSize - 2,
+      gridSize - 2
+    );
+  }
+
+  // food color
+  if (food.type === "red") ctx.fillStyle = "red";
+  else if (food.type === "blue") ctx.fillStyle = "blue";
+  else if (food.type === "brown") ctx.fillStyle = "brown";
+
+  ctx.fillRect(
+    food.x * gridSize,
+    food.y * gridSize,
+    gridSize - 2,
+    gridSize - 2
+  );
+}
+
+// ---------------- FOOD SPAWN (weighted + safe) ----------------
+function randomFood() {
+  const r = Math.random();
+
+  let type;
+  if (r < 0.7) type = "red";
+  else if (r < 0.9) type = "brown";
+  else type = "blue";
+
+  let newFood;
+
+  while (true) {
+    newFood = {
+      x: Math.floor(Math.random() * tileCount),
+      y: Math.floor(Math.random() * tileCount),
+      type: type
+    };
+
+    const onSnake = snake.some(
+      part => part.x === newFood.x && part.y === newFood.y
+    );
+
+    if (!onSnake) break;
+  }
+
+  return newFood;
+}
+
+// ---------------- CONTROLS ----------------
+document.addEventListener("keydown", changeDirection);
+
+function changeDirection(e) {
+  switch (e.key) {
+    case "ArrowUp":
+      if (direction.y !== 1) direction = { x: 0, y: -1 };
+      break;
+    case "ArrowDown":
+      if (direction.y !== -1) direction = { x: 0, y: 1 };
+      break;
+    case "ArrowLeft":
+      if (direction.x !== 1) direction = { x: -1, y: 0 };
+      break;
+    case "ArrowRight":
+      if (direction.x !== -1) direction = { x: 1, y: 0 };
+      break;
+  }
+}
+
+// ---------------- UI ----------------
+function togglePause() {
+  paused = !paused;
+}
+
+function restartGame() {
+  init();
+  startGame();
+}
+
+function changeSpeed(newSpeed) {
+  speed = parseInt(newSpeed);
+  startGame();
+}
+
+// ---------------- GAME OVER ----------------
+function gameOver() {
+  alert("Game Over! Score: " + score);
+  init();
+  startGame();
+}
+
+// ---------------- BOOT ----------------
+init();
+startGame();
+</script>
+
+</body>
+</html>
