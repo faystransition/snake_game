@@ -9,25 +9,37 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start
+      justify-content: center;
       height: 100vh;
       background: #111;
       margin: 0;
       font-family: Arial, sans-serif;
       color: white;
-      overflow: hidden; /* prevent scrolling on mobile */
+      overflow: hidden;
+      touch-action: none;
+      gap: 10px;
+    }
+
+    #ui {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
     }
 
     canvas {
       background: #000;
       border: 2px solid #555;
+      width: min(92vw, 420px);
+      height: min(92vw, 420px);
     }
 
     #topbar {
-      margin-bottom: 10px;
       display: flex;
       gap: 15px;
       align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
     }
 
     button, select {
@@ -37,10 +49,11 @@
     }
 
     #startMsg {
-      margin-bottom: 10px;
+      margin-bottom: 5px;
       color: #aaa;
+      text-align: center;
     }
-    
+
     #title {
       margin-top: 5px;
       margin-bottom: 10px;
@@ -49,46 +62,21 @@
       letter-spacing: 2px;
     }
 
-    /* MOBILE CONTROLS */
-    .controls {
-      position: fixed;
-      bottom: 20px;
-      text-align: center;
-    }
+    @media (max-width: 600px) {
+      canvas {
+        width: 92vw;
+        height: 92vw;
+      }
 
-    .controls button {
-      font-size: 26px;
-      padding: 15px;
-      margin: 6px;
-      border-radius: 10px;
-      background: #222;
-      color: white;
-      border: 1px solid #555;
-    }
+      button, select {
+        font-size: 16px;
+        padding: 8px 12px;
+      }
 
-  /* MOBILE UI IMPROVEMENTS */
-  @media (max-width: 600px) {
-    canvas {
-      width: 90vw;
-      height: 90vw;
+      #title {
+        font-size: 32px;
+      }
     }
-    
-    #topbar {
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px;
-    }
-
-    button, select {
-      font-size: 16px;
-      padding: 8px 12px;
-    }
-
-    #title {
-      font-size: 32px;
-    }
-  }
-    
   </style>
 </head>
 
@@ -96,35 +84,27 @@
 
 <h1 id="title">Snake Challenge I</h1>
 
-<div id="startMsg">Press Arrow Keys to Start</div>
+<div id="ui">
+  <div id="startMsg">Swipe or use Arrow Keys to Start</div>
 
-<div id="topbar">
-  <div id="score">Score: 0</div>
+  <div id="topbar">
+    <div id="score">Score: 0</div>
 
-  <button onclick="togglePause()">Pause</button>
-  <button onclick="restartGame()">Restart</button>
+    <button onclick="togglePause()">Pause</button>
+    <button onclick="restartGame()">Restart</button>
 
-  <label>
-    Speed:
-    <select onchange="changeSpeed(this.value)">
-      <option value="200">Slow</option>
-      <option value="120" selected>Normal</option>
-      <option value="70">Fast</option>
-    </select>
-  </label>
+    <label>
+      Speed:
+      <select onchange="changeSpeed(this.value)">
+        <option value="200">Slow</option>
+        <option value="120" selected>Normal</option>
+        <option value="70">Fast</option>
+      </select>
+    </label>
+  </div>
 </div>
 
 <canvas id="game" width="400" height="400"></canvas>
-
-<!-- BUTTON CONTROLS -->
-<div class="controls">
-  <button onclick="setDirection('up')">⬆️</button>
-  <div>
-    <button onclick="setDirection('left')">⬅️</button>
-    <button onclick="setDirection('down')">⬇️</button>
-    <button onclick="setDirection('right')">➡️</button>
-  </div>
-</div>
 
 <script>
 const canvas = document.getElementById("game");
@@ -174,7 +154,6 @@ function gameLoop() {
 
 // ---------------- UPDATE ----------------
 function update() {
-
   if (direction.x === 0 && direction.y === 0) return;
 
   const head = {
@@ -266,10 +245,6 @@ function randomFood() {
 document.addEventListener("keydown", (e) => {
   handleDirection(e.key);
 });
-
-function setDirection(dir) {
-  handleDirection(dir);
-}
 
 function handleDirection(key) {
   document.getElementById("startMsg").style.display = "none";
